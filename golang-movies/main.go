@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -22,10 +23,16 @@ type Director struct {
 	LastName string `json:"last_name"`
 }
 
+type Response struct {
+	 Data []Movie `json:"data"`
+	 Message string `json:"message"`
+	 Code int8 `json:"code"`
+}
+
 var movies[]Movie
 
 func main() {
-	r := mux.NewRouter()
+	r := mux.NewRouter().StrictSlash(true)
 
 	movies = append(movies, Movie{
 		ID: "1",
@@ -44,13 +51,17 @@ func main() {
 	r.HandleFunc("/movies/{id}", deleteMovie).Methods("DELETE")
 
 	fmt.Println("Server running on PORT 8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe(":" + os.Getenv("PORT"), r))
 
 }
 
-func getMovies(w http.ResponseWriter, r *http.Request)  {
+func getMovies(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(movies)
+	json.NewEncoder(w).Encode(Response{
+		Data: movies,
+		Message: "successfully",
+		Code: 0,
+	})
 }
 
 func createMovie(w http.ResponseWriter, r *http.Request)  {
@@ -59,7 +70,11 @@ func createMovie(w http.ResponseWriter, r *http.Request)  {
 	_ = json.NewDecoder(r.Body).Decode(&newMovie)
 	newMovie.ID = strconv.Itoa(rand.Intn(1000000000))
 	movies = append(movies, newMovie)
-	json.NewEncoder(w).Encode(movies)
+	json.NewEncoder(w).Encode(Response{
+		Data: movies,
+		Message: "successfully",
+		Code: 0,
+	})
 }
 
 func getMovie(w http.ResponseWriter, r *http.Request)  {
@@ -68,7 +83,11 @@ func getMovie(w http.ResponseWriter, r *http.Request)  {
 
 	for _, movie := range movies {
 		if movie.ID == params["id"] {
-			json.NewEncoder(w).Encode(movie)
+			json.NewEncoder(w).Encode(Response{
+				Data: []Movie{movie},
+				Message: "successfully",
+				Code: 0,
+			})
 			break
 		}
 	}
@@ -84,6 +103,11 @@ func updateMovie(w http.ResponseWriter, r *http.Request)  {
 			_ = json.NewDecoder(r.Body).Decode(&newMovie)
 			newMovie.ID = params["id"]
 			movies = append(movies, newMovie)
+			json.NewEncoder(w).Encode(Response{
+				Data: []Movie{newMovie},
+				Message: "successfully",
+				Code: 0,
+			})
 			break
 		}
 	}
@@ -95,7 +119,11 @@ func deleteMovie(w http.ResponseWriter, r *http.Request)  {
 	for index, item := range movies {
 		if item.ID == params["id"] {
 			movies = append(movies[:index], movies[index+1:]...)
-			json.NewEncoder(w).Encode(item)
+			json.NewEncoder(w).Encode(Response{
+				Data: []Movie{item},
+				Message: "successfully",
+				Code: 0,
+			})
 			break
 		}
 	}
